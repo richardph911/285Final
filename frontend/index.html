@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>FoodSwipe 🍽️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f0e0c;
+        --surface: #1a1917;
+        --card: #222120;
+        --accent: #f5a623;
+        --accent2: #e85d4a;
+        --yes: #4caf7d;
+        --no: #e85d4a;
+        --text: #f0ede8;
+        --muted: #7a7570;
+        --border: #2e2c2a;
+        --radius: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100dvh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+      }
+
+      /* ── HEADER ── */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px 10px;
+        flex-shrink: 0;
+      }
+      .logo {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        color: var(--accent);
+      }
+      .logo span {
+        color: var(--text);
+      }
+      .progress-pill {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .progress-pill b {
+        color: var(--text);
+      }
+
+      /* ── TABS ── */
+      .tabs {
+        display: flex;
+        gap: 6px;
+        padding: 0 20px 12px;
+        flex-shrink: 0;
+      }
+      .tab {
+        flex: 1;
+        padding: 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #0f0e0c;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* ── VIEWS ── */
+      .view {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+        flex-direction: column;
+      }
+      .view.active {
+        display: flex;
+      }
+
+      /* ── SWIPE VIEW ── */
+      #swipe-view {
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px 16px;
+        position: relative;
+      }
+
+      .card-stack {
+        position: relative;
+        width: 100%;
+        max-width: 360px;
+        aspect-ratio: 3/4;
+      }
+
+      .food-card {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: var(--card);
+        border: 1px solid var(--border);
+        cursor: grab;
+        transition: transform 0.15s ease;
+        touch-action: none;
+        will-change: transform;
+      }
+      .food-card.back1 {
+        transform: scale(0.95) translateY(12px);
+        z-index: 1;
+      }
+      .food-card.back2 {
+        transform: scale(0.9) translateY(24px);
+        z-index: 0;
+      }
+      .food-card.top {
+        z-index: 10;
+      }
+      .food-card.dragging {
+        transition: none !important;
+        cursor: grabbing;
+      }
+
+      .card-img {
+        width: 100%;
+        height: 62%;
+        object-fit: cover;
+        display: block;
+        background: var(--surface);
+      }
+      .card-emoji-fallback {
+        width: 100%;
+        height: 62%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 80px;
+        background: linear-gradient(135deg, #2a2826, #1a1917);
+      }
+
+      .card-body {
+        padding: 16px 18px;
+      }
+      .card-cuisine {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 6px;
+      }
+      .card-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 6px;
+      }
+      .card-desc {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      /* Vote overlays */
+      .vote-overlay {
+        position: absolute;
+        top: 20px;
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        border: 3px solid;
+        opacity: 0;
+        transition: opacity 0.1s;
+        pointer-events: none;
+        z-index: 20;
+      }
+      .vote-overlay.yes-label {
+        right: 20px;
+        color: var(--yes);
+        border-color: var(--yes);
+        transform: rotate(12deg);
+      }
+      .vote-overlay.no-label {
+        left: 20px;
+        color: var(--no);
+        border-color: var(--no);
+        transform: rotate(-12deg);
+      }
+
+      /* Action buttons */
+      .action-buttons {
+        display: flex;
+        gap: 24px;
+        margin-top: 20px;
+        justify-content: center;
+      }
+      .action-btn {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--surface);
+        font-size: 26px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .action-btn:active {
+        transform: scale(0.9);
+      }
+      .action-btn.no-btn {
+        border-color: var(--no);
+        color: var(--no);
+      }
+      .action-btn.yes-btn {
+        border-color: var(--yes);
+        color: var(--yes);
+      }
+      .action-btn.undo-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+        align-self: center;
+      }
+
+      /* End of deck */
+      .end-state {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 24px;
+        gap: 16px;
+      }
+      .end-state.active {
+        display: flex;
+      }
+      .end-emoji {
+        font-size: 64px;
+      }
+      .end-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .end-sub {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+      .end-btn {
+        background: var(--accent);
+        color: #0f0e0c;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+
+      /* ── RESULTS VIEW ── */
+      #results-view {
+        flex-direction: column;
+      }
+      .results-header {
+        padding: 0 20px 12px;
+        flex-shrink: 0;
+      }
+      .sort-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .sort-btn {
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .sort-btn.active {
+        background: var(--accent);
+        color: #0f0e0c;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      .results-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 16px 24px;
+      }
+      .results-list::-webkit-scrollbar {
+        width: 3px;
+      }
+      .results-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .results-list::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      .result-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        margin-bottom: 8px;
+        transition: transform 0.1s;
+      }
+      .result-rank {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--muted);
+        width: 28px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .result-rank.gold {
+        color: #f5a623;
+      }
+      .result-rank.silver {
+        color: #aaa;
+      }
+      .result-rank.bronze {
+        color: #cd7f32;
+      }
+      .result-emoji {
+        font-size: 28px;
+        flex-shrink: 0;
+      }
+      .result-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .result-name {
+        font-weight: 600;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .result-cuisine {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .result-bar-wrap {
+        width: 90px;
+        flex-shrink: 0;
+      }
+      .result-pct {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--yes);
+        text-align: right;
+        margin-bottom: 3px;
+      }
+      .result-pct.low {
+        color: var(--no);
+      }
+      .result-pct.mid {
+        color: var(--accent);
+      }
+      .result-bar {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .result-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--yes);
+        transition: width 0.5s ease;
+      }
+      .result-votes {
+        font-size: 10px;
+        color: var(--muted);
+        text-align: right;
+        margin-top: 2px;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        font-size: 32px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: transform 0.3s ease;
+        z-index: 100;
+        white-space: nowrap;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        Food
+        <span>Swipe</span>
+      </div>
+      <div class="progress-pill" id="progress-pill">Loading…</div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('swipe')">🃏 Swipe</button>
+      <button class="tab" onclick="switchTab('results')">📊 Results</button>
+    </div>
+
+    <!-- SWIPE VIEW -->
+    <div id="swipe-view" class="view active">
+      <div class="loading" id="swipe-loading">🍽️</div>
+
+      <div class="card-stack" id="card-stack" style="display: none;">
+        <!-- cards injected here -->
+      </div>
+
+      <div class="action-buttons" id="action-buttons" style="display: none;">
+        <button class="action-btn no-btn" onclick="vote('no')">✕</button>
+        <button class="action-btn undo-btn" onclick="undoLast()" title="Undo">
+          ↩
+        </button>
+        <button class="action-btn yes-btn" onclick="vote('yes')">♥</button>
+      </div>
+
+      <div class="end-state" id="end-state">
+        <div class="end-emoji">🎉</div>
+        <div class="end-title">You've tasted everything!</div>
+        <div class="end-sub">
+          You voted on all 100 dishes.
+          <br />
+          See how the world voted below.
+        </div>
+        <button class="end-btn" onclick="switchTab('results')">
+          See Results →
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULTS VIEW -->
+    <div id="results-view" class="view">
+      <div class="results-header">
+        <div class="sort-row">
+          <button class="sort-btn active" onclick="setSort('loved')">
+            ❤️ Most Loved
+          </button>
+          <button class="sort-btn" onclick="setSort('divisive')">
+            ⚡ Divisive
+          </button>
+          <button class="sort-btn" onclick="setSort('popular')">
+            🔥 Most Voted
+          </button>
+          <button class="sort-btn" onclick="setSort('az')">A–Z</button>
+        </div>
+      </div>
+      <div class="results-list" id="results-list">
+        <div class="loading">🍽️</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const API = 'http://localhost:3001'
+
+      // Session ID persisted in localStorage (cache/UX only; server is source of truth)
+      let SESSION_ID = localStorage.getItem('swipe_session')
+      if (!SESSION_ID) {
+        SESSION_ID =
+          'sess_' +
+          Math.random().toString(36).slice(2) +
+          Date.now().toString(36)
+        localStorage.setItem('swipe_session', SESSION_ID)
+      }
+
+      let allItems = []
+      let queue = [] // items not yet voted on this session
+      let history = [] // [{item, choice}] for undo
+      let currentSort = 'loved'
+      let resultsData = []
+
+      // ── INIT ──────────────────────────────────────────────────
+      async function init() {
+        try {
+          const [itemsRes, votesRes] = await Promise.all([
+            fetch(`${API}/items`),
+            fetch(`${API}/results/${SESSION_ID}`),
+          ])
+          allItems = await itemsRes.json()
+          const myVotes = await votesRes.json()
+          const votedIds = new Set(myVotes.map((v) => v.item_id))
+          queue = allItems.filter((i) => !votedIds.has(i.id))
+
+          document.getElementById('swipe-loading').style.display = 'none'
+          updateProgress()
+
+          if (queue.length === 0) {
+            showEndState()
+          } else {
+            buildStack()
+            document.getElementById('card-stack').style.display = 'block'
+            document.getElementById('action-buttons').style.display = 'flex'
+          }
+        } catch (e) {
+          document.getElementById('swipe-loading').textContent =
+            '⚠️ Cannot connect to backend'
+          console.error(e)
+        }
+      }
+
+      // ── CARD STACK ────────────────────────────────────────────
+      function buildStack() {
+        const stack = document.getElementById('card-stack')
+        stack.innerHTML = ''
+        const visible = queue.slice(0, 3)
+        visible.reverse().forEach((item, i) => {
+          const card = createCard(item)
+          card.classList.add(i === 0 ? 'back2' : i === 1 ? 'back1' : 'top')
+          stack.appendChild(card)
+        })
+        if (queue.length > 0) attachDrag(stack.querySelector('.food-card.top'))
+      }
+
+      function createCard(item) {
+        const card = document.createElement('div')
+        card.className = 'food-card'
+        card.dataset.id = item.id
+
+        card.innerHTML = `
+    <div class="vote-overlay yes-label">YUM</div>
+    <div class="vote-overlay no-label">NOPE</div>
+    <div class="card-emoji-fallback">${item.emoji}</div>
+    <div class="card-body">
+      <div class="card-cuisine">${item.cuisine}</div>
+      <div class="card-name">${item.name}</div>
+      <div class="card-desc">${item.description}</div>
+    </div>
+  `
+        return card
+      }
+
+      // ── DRAG / SWIPE ──────────────────────────────────────────
+      function attachDrag(card) {
+        if (!card) return
+        let startX = 0,
+          startY = 0,
+          curX = 0,
+          curY = 0,
+          dragging = false
+
+        function onStart(e) {
+          dragging = true
+          card.classList.add('dragging')
+          const pt = e.touches ? e.touches[0] : e
+          startX = pt.clientX
+          startY = pt.clientY
+        }
+
+        function onMove(e) {
+          if (!dragging) return
+          e.preventDefault()
+          const pt = e.touches ? e.touches[0] : e
+          curX = pt.clientX - startX
+          curY = pt.clientY - startY
+          const rot = curX * 0.08
+          card.style.transform = `translate(${curX}px, ${curY}px) rotate(${rot}deg)`
+
+          const threshold = 60
+          const yesLabel = card.querySelector('.yes-label')
+          const noLabel = card.querySelector('.no-label')
+          if (curX > threshold) {
+            yesLabel.style.opacity = Math.min(1, (curX - threshold) / 60)
+            noLabel.style.opacity = 0
+          } else if (curX < -threshold) {
+            noLabel.style.opacity = Math.min(1, (-curX - threshold) / 60)
+            yesLabel.style.opacity = 0
+          } else {
+            yesLabel.style.opacity = 0
+            noLabel.style.opacity = 0
+          }
+        }
+
+        function onEnd() {
+          if (!dragging) return
+          dragging = false
+          card.classList.remove('dragging')
+          const SWIPE_THRESHOLD = 100
+          if (curX > SWIPE_THRESHOLD) {
+            flingCard(card, 'yes')
+          } else if (curX < -SWIPE_THRESHOLD) {
+            flingCard(card, 'no')
+          } else {
+            card.style.transform = ''
+            card.querySelector('.yes-label').style.opacity = 0
+            card.querySelector('.no-label').style.opacity = 0
+          }
+          curX = 0
+          curY = 0
+        }
+
+        card.addEventListener('mousedown', onStart)
+        card.addEventListener('touchstart', onStart, { passive: true })
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('touchmove', onMove, { passive: false })
+        window.addEventListener('mouseup', onEnd)
+        window.addEventListener('touchend', onEnd)
+      }
+
+      function flingCard(card, choice) {
+        const dir = choice === 'yes' ? 1 : -1
+        card.style.transition = 'transform .35s ease, opacity .35s ease'
+        card.style.transform = `translate(${dir * 600}px, 60px) rotate(${
+          dir * 25
+        }deg)`
+        card.style.opacity = '0'
+
+        const item = queue[0]
+        history.push({ item, choice })
+        queue.shift()
+        recordVote(item.id, choice)
+        updateProgress()
+
+        setTimeout(() => {
+          card.remove()
+          if (queue.length === 0) {
+            showEndState()
+          } else {
+            buildStack()
+          }
+        }, 350)
+      }
+
+      // ── BUTTON VOTES ─────────────────────────────────────────
+      function vote(choice) {
+        const card = document.querySelector('.food-card.top')
+        if (!card) return
+        flingCard(card, choice)
+      }
+
+      // ── UNDO ─────────────────────────────────────────────────
+      function undoLast() {
+        if (history.length === 0) {
+          showToast('Nothing to undo')
+          return
+        }
+        const last = history.pop()
+        queue.unshift(last.item)
+        // Remove vote from server (re-vote not needed; just rebuild UI)
+        updateProgress()
+        buildStack()
+        showToast(`Undid ${last.item.name}`)
+      }
+
+      // ── API ───────────────────────────────────────────────────
+      async function recordVote(itemId, choice) {
+        try {
+          await fetch(`${API}/vote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemId, choice, sessionId: SESSION_ID }),
+          })
+        } catch (e) {
+          console.error('Vote failed:', e)
+        }
+      }
+
+      // ── RESULTS ──────────────────────────────────────────────
+      async function loadResults() {
+        const list = document.getElementById('results-list')
+        list.innerHTML = '<div class="loading">🍽️</div>'
+        try {
+          const res = await fetch(`${API}/results`)
+          resultsData = await res.json()
+          renderResults()
+        } catch (e) {
+          list.innerHTML =
+            '<p style="padding:20px;color:var(--muted)">Could not load results</p>'
+        }
+      }
+
+      function setSort(mode) {
+        currentSort = mode
+        document
+          .querySelectorAll('.sort-btn')
+          .forEach((b) => b.classList.remove('active'))
+        event.target.classList.add('active')
+        renderResults()
+      }
+
+      function renderResults() {
+        const data = [...resultsData]
+
+        if (currentSort === 'loved') {
+          data.sort((a, b) => {
+            const pa = a.total_votes ? a.yes_count / a.total_votes : 0
+            const pb = b.total_votes ? b.yes_count / b.total_votes : 0
+            return pb - pa
+          })
+        } else if (currentSort === 'divisive') {
+          data.sort((a, b) => {
+            const pa = a.total_votes
+              ? Math.abs(0.5 - a.yes_count / a.total_votes)
+              : 1
+            const pb = b.total_votes
+              ? Math.abs(0.5 - b.yes_count / b.total_votes)
+              : 1
+            return pa - pb
+          })
+        } else if (currentSort === 'popular') {
+          data.sort((a, b) => b.total_votes - a.total_votes)
+        } else if (currentSort === 'az') {
+          data.sort((a, b) => a.name.localeCompare(b.name))
+        }
+
+        const list = document.getElementById('results-list')
+        list.innerHTML = data
+          .map((item, i) => {
+            const pct = item.total_votes
+              ? Math.round((item.yes_count / item.total_votes) * 100)
+              : 0
+            const rankClass =
+              i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''
+            const pctClass = pct >= 60 ? '' : pct >= 40 ? 'mid' : 'low'
+            return `
+      <div class="result-item">
+        <div class="result-rank ${rankClass}">${i + 1}</div>
+        <div class="result-emoji">${item.emoji}</div>
+        <div class="result-info">
+          <div class="result-name">${item.name}</div>
+          <div class="result-cuisine">${item.cuisine}</div>
+        </div>
+        <div class="result-bar-wrap">
+          <div class="result-pct ${pctClass}">${pct}%</div>
+          <div class="result-bar">
+            <div class="result-bar-fill" style="width:${pct}%;background:${
+              pct >= 60
+                ? 'var(--yes)'
+                : pct >= 40
+                ? 'var(--accent)'
+                : 'var(--no)'
+            }"></div>
+          </div>
+          <div class="result-votes">${item.total_votes} votes</div>
+        </div>
+      </div>`
+          })
+          .join('')
+      }
+
+      // ── UI HELPERS ────────────────────────────────────────────
+      function updateProgress() {
+        const voted = allItems.length - queue.length
+        document.getElementById(
+          'progress-pill',
+        ).innerHTML = `<b>${voted}</b> / ${allItems.length}`
+      }
+
+      function showEndState() {
+        document.getElementById('card-stack').style.display = 'none'
+        document.getElementById('action-buttons').style.display = 'none'
+        document.getElementById('end-state').classList.add('active')
+      }
+
+      function switchTab(tab) {
+        document
+          .querySelectorAll('.tab')
+          .forEach((t, i) =>
+            t.classList.toggle('active', ['swipe', 'results'][i] === tab),
+          )
+        document
+          .querySelectorAll('.view')
+          .forEach((v) => v.classList.remove('active'))
+        document.getElementById(`${tab}-view`).classList.add('active')
+        if (tab === 'results') loadResults()
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById('toast')
+        t.textContent = msg
+        t.classList.add('show')
+        setTimeout(() => t.classList.remove('show'), 2000)
+      }
+
+      // ── START ─────────────────────────────────────────────────
+      init()
+    </script>
+  </body>
+</html>
