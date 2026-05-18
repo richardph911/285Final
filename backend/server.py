@@ -39,6 +39,7 @@ def init_db():
     conn.close()
 
 init_db()
+# Returns all 100 food items as a json list and frontend calls this to load the card deck
 
 @app.route('/items')
 def get_items():
@@ -47,6 +48,9 @@ def get_items():
     conn.close()
     return jsonify([dict(row) for row in items])
 
+# Read the json body sent by frontend  and error handling
+# Then if success, insert a new vote and if it’s already inserted,
+#  updates their choices instead duplicating
 @app.route('/vote', methods=['POST'])
 def post_vote():
     data = request.get_json(silent=True) or {}
@@ -75,6 +79,8 @@ def post_vote():
     conn.commit()
     conn.close()
     return jsonify({'ok': True})
+
+# Join items and votes table together, count how many yes and no vote then group by its id
 
 @app.route('/results')
 def get_results():
