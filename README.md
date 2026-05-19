@@ -31,6 +31,10 @@ python3 -m http.server 8080
 
 ## UI
 
+### Homepage
+
+![alt text](image-2.png)
+
 ### Swipe Left/Right
 
 ![alt text](image.png)
