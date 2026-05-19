@@ -29,6 +29,16 @@ python3 -m http.server 8080
 
 ---
 
+## UI
+
+### Swipe Left/Right
+
+![alt text](image.png)
+
+### Result
+
+![alt text](image-1.png)
+
 ## Architecture
 
 **Frontend:** Single HTML file with vanilla JS and CSS.
