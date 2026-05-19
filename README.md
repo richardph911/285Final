@@ -31,9 +31,12 @@ python3 -m http.server 8080
 
 ## Architecture
 
-**Frontend:** Single HTML file with vanilla JS and CSS. No build step, no framework — maximizes speed and portability. Touch drag gestures are implemented from scratch using `touchstart`/`touchmove`/`touchend` events. Session ID is generated client-side and stored in `localStorage` as a UX cache; the server is the source of truth for votes.
+**Frontend:** Single HTML file with vanilla JS and CSS.
+Touch drag gestures are implemented from scratch using `touchstart`/`touchmove`/`touchend` events.
+Session ID is generated client-side and stored in `localStorage` as a UX cache.
 
-**Backend:** Python Flask REST API with SQLite via the built-in `sqlite3` module. Three endpoints: `GET /items`, `POST /vote`, `GET /results`. The `votes` table has a `UNIQUE(item_id, session_id)` constraint enforced at the DB level — an `INSERT OR REPLACE` (upsert) handles idempotency, so double-voting updates rather than duplicates. SQLite was chosen for zero-config simplicity; swapping to Postgres requires only changing the connection string.
+**Backend:** Python Flask REST API with SQLite via the built-in `sqlite3` module. Three endpoints: `GET /items`, `POST /vote`, `GET /results`. The `votes` table has a `UNIQUE(item_id, session_id)` constraint enforced at the DB level — an `INSERT OR REPLACE` (upsert) handles idempotency, so double-voting updates rather than duplicates.
+SQLite was chosen for zero-config simplicity; swapping to Postgres requires only changing the connection string.
 
 ---
 
